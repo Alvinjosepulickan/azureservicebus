@@ -1,0 +1,71 @@
+create service bus,  queue  in azure
+    copy primary connection string for using in appsettings
+
+
+
+create IServiceApp.cs
+
+        Task Publish<T>(T obj);
+        Task Publish(string str);
+
+
+
+create ServiceApp.cs
+	install Microsoft.Azure.ServiceBus
+	private readonly IQueueClient _queueClient;
+        public ServiceApp(IQueueClient queueClient)
+        {
+            _queueClient = queueClient;
+        }
+
+        public async Task Publish<T>(T obj) {
+            var message=JsonConvert.SerializeObject(obj);
+            var messageObj= new Message(Encoding.UTF8.GetBytes(message));
+            await _queueClient.SendAsync(messageObj);
+        }
+
+
+
+
+create appsetting entry
+    "ServiceBus": {
+    "ConnectionString": "Endpoint=sb://servicebuslearnning.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=XsqDIzmeu48Qjt9rDq3L88vjxkfDj6xFV+ASbM1qPx8=",
+    "QueueName": "Test"
+  }
+
+
+in program.cs
+    
+    builder.Services.AddSingleton<IQueueClient>(x=>new QueueClient(builder.Configuration.GetValue<string>("ServiceBus:ConnectionString")
+        , builder.Configuration.GetValue<string>("ServiceBus:QueueName")));
+
+
+
+
+
+
+Topic, subscription and filters
+
+
+    create topic in  azure service bus
+        add topic in  appsettings
+        create subscription in topic
+
+
+        change injection code in program.cs
+            builder.Services.AddSingleton<ITopicClient>(x=>new TopicClient(builder.Configuration.GetValue<string>("ServiceBus:ConnectionString")
+                , builder.Configuration.GetValue<string>("ServiceBus:TopicName")));
+
+
+        in serviceApp.cs change IQueueClient to ITopicClient
+
+
+
+
+    create filter in subscription
+        correlation filter
+            custom properties
+                messageType-> classname
+
+        in serviceApp.cs
+            messageObj.UserProperties["messageType"] = typeof(T).Name;
