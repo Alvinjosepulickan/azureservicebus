@@ -1,0 +1,26 @@
+create ConsumerService
+	ConsumerService:BackgroundService
+	private readonly ISubscriptionClient _subscriptionClient;
+
+
+
+
+
+
+	protected override  Task ExecuteAsync(CancellationToken stoppingToken) {
+            _subscriptionClient.RegisterMessageHandler((message, token) => {
+                var custObjString = Encoding.UTF8.GetString(message.Body);
+                var customer = JsonConvert.DeserializeObject<Customer>(custObjString);
+                return _subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
+            },
+            new MessageHandlerOptions(args =>Task.CompletedTask));
+            return Task.CompletedTask;
+        }
+
+
+
+injecting dependency
+            builder.Services.AddSingleton<ISubscriptionClient>
+                (x =>new SubscriptionClient(builder.Configuration.GetValue<string>("ServiceBus:ConnectionString"),
+                    builder.Configuration.GetValue<string>("ServiceBus:TopicName"),
+                    builder.Configuration.GetValue<string>("ServiceBus:Subscription")));
